@@ -7,9 +7,10 @@ const app = express();
 
 // ── Middleware ──────────────────────────────────────────────
 app.use(cors({
-    origin: 'https://quad-solutions-nine.vercel.app',
+    origin: ['https://quad-solutions-nine.vercel.app', 'http://localhost:5173', 'http://127.0.0.1:5500'],
     credentials: true
 }));
+
 app.use(express.json());
 
 // ── Routes ──────────────────────────────────────────────────
