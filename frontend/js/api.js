@@ -1,5 +1,5 @@
 // ── Config ──────────────────────────────────────────────────
-const API = 'https://quad-solutions-production.up.railway.app/';  // Change to deployed URL later
+const API = 'https://quad-solutions-production.up.railway.app/api';
 
 // ── Token helpers ────────────────────────────────────────────
 const getToken = () => localStorage.getItem('token');
