@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Dashboard — Quad Solutions</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<div class="dashboard">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">Quad<span>Solutions</span></div>
+    <nav>
+      <a href="client-dashboard.html" class="active">📋 My Applications</a>
+      <a href="submit-request.html">➕ New Request</a>
+      <a href="contact.html">📞 Contact Support</a>
+    </nav>
+    <div class="sidebar-logout">
+      <p style="color:rgba(255,255,255,0.45);font-size:0.8rem;margin-bottom:0.5rem" id="user-name"></p>
+      <button class="btn-outline" onclick="logout()" style="width:100%;font-size:0.85rem">Logout</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main-content">
+    <h1 class="page-title">My Applications</h1>
+
+    <div class="stats-row" id="stats-row">
+      <div class="stat-box"><div class="num" id="stat-total">—</div><div class="lbl">Total</div></div>
+      <div class="stat-box"><div class="num" id="stat-pending">—</div><div class="lbl">Pending</div></div>
+      <div class="stat-box"><div class="num" id="stat-approved">—</div><div class="lbl">Approved</div></div>
+      <div class="stat-box"><div class="num" id="stat-rejected">—</div><div class="lbl">Rejected</div></div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h2 style="font-size:1.1rem">All Requests</h2>
+      <a href="submit-request.html" class="btn-primary">+ New Request</a>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Provider</th><th>Specialty</th><th>Insurance Plan</th>
+            <th>Status</th><th>Submitted</th>
+          </tr>
+        </thead>
+        <tbody id="requests-tbody">
+          <tr><td colspan="5" style="text-align:center;color:var(--gray);padding:2rem">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  requireLogin();
+
+  const user = getUser();
+  document.getElementById('user-name').textContent = user?.name || '';
+
+  async function loadRequests() {
+    try {
+      const data = await requestsAPI.getAll();
+      const tbody = document.getElementById('requests-tbody');
+
+      document.getElementById('stat-total').textContent    = data.length;
+      document.getElementById('stat-pending').textContent  = data.filter(r => r.status === 'pending').length;
+      document.getElementById('stat-approved').textContent = data.filter(r => r.status === 'approved').length;
+      document.getElementById('stat-rejected').textContent = data.filter(r => r.status === 'rejected').length;
+
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--gray);padding:2rem">
+          No applications yet. <a href="submit-request.html" style="color:var(--teal)">Submit your first one →</a>
+        </td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(r => `
+        <tr>
+          <td><strong>${r.providerName}</strong><br/><span style="color:var(--gray);font-size:0.8rem">NPI: ${r.providerNPI}</span></td>
+          <td>${r.specialty}</td>
+          <td>${r.insurancePlan}</td>
+          <td>${statusBadge(r.status)}</td>
+          <td>${formatDate(r.createdAt)}</td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      document.getElementById('requests-tbody').innerHTML =
+        `<tr><td colspan="5" style="color:var(--danger);padding:1rem">${err.message}</td></tr>`;
+    }
+  }
+
+  loadRequests();
+</script>
+</body>
+</html>

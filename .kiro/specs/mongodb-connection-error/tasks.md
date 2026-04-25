@@ -1,0 +1,95 @@
+# Implementation Plan
+
+- [ ] 1. Write bug condition exploration test
+  - **Property 1: Bug Condition** - MongoDB Connection DNS Resolution Failure
+  - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
+  - **DO NOT attempt to fix the test or the code when it fails**
+  - **NOTE**: This test encodes the expected behavior - it will validate the fix when it passes after implementation
+  - **GOAL**: Surface counterexamples that demonstrate the DNS resolution bug exists
+  - **Scoped PBT Approach**: Scope the property to the concrete failing case - server startup with current MONGO_URI configuration
+  - Test that server startup with MONGO_URI containing database name in path fails with DNS SRV lookup error (from Bug Condition in design: `isBugCondition` where `dnsResolutionFailed == true`)
+  - The test assertions should verify that connection succeeds and logs "✅ MongoDB connected" (matches Expected Behavior Properties from design)
+  - Run test on UNFIXED code (current server.js with inline mongoose.connect())
+  - **EXPECTED OUTCOME**: Test FAILS with `querySrv ECONNREFUSED` error (this is correct - it proves the bug exists)
+  - Document counterexamples found: specific URI format that causes DNS failure, error messages, connection behavior
+  - Mark task complete when test is written, run, and failure is documented
+  - _Requirements: 1.1, 1.2, 2.1, 2.2_
+
+- [ ] 2. Write preservation property tests (BEFORE implementing fix)
+  - **Property 2: Preservation** - Server Configuration and Behavior Preservation
+  - **IMPORTANT**: Follow observation-first methodology
+  - Observe behavior on UNFIXED code for non-connection operations:
+    - Express middleware configuration (cors, express.json())
+    - Route registration and structure
+    - Health check endpoint response
+    - PORT configuration from environment
+    - Error handling and process exit behavior
+  - Write property-based tests capturing observed behavior patterns from Preservation Requirements (section 3.1, 3.2, 3.3)
+  - Property-based testing generates many test cases for stronger guarantees that refactoring doesn't break existing functionality
+  - Run tests on UNFIXED code
+  - **EXPECTED OUTCOME**: Tests PASS (this confirms baseline behavior to preserve)
+  - Mark task complete when tests are written, run, and passing on unfixed code
+  - _Requirements: 3.1, 3.2, 3.3_
+
+- [ ] 3. Fix MongoDB connection error
+
+  - [ ] 3.1 Create config/db.js with connectDB function
+    - Create new directory `backend/config/` if it doesn't exist
+    - Create `backend/config/db.js` file
+    - Import mongoose and dotenv
+    - Define async connectDB function with try-catch error handling
+    - Use mongoose.connect() with process.env.MONGO_URI
+    - Log "✅ MongoDB connected" on success
+    - Throw error on failure for caller to handle
+    - Export connectDB function using module.exports
+    - _Bug_Condition: isBugCondition(input) where input.mongoURIProvided == true AND input.connectionAttempted == true AND input.dnsResolutionFailed == true_
+    - _Expected_Behavior: result.connected == true AND result.logMessage == "✅ MongoDB connected" AND serverStarted == true_
+    - _Preservation: Express middleware configuration, route handling, health checks, PORT configuration, and error handling must remain unchanged (Preservation Requirements 3.1, 3.2, 3.3)_
+    - _Requirements: 2.1, 2.2_
+
+  - [ ] 3.2 Refactor server.js to use connectDB
+    - Import connectDB from './config/db' at top of server.js
+    - Remove inline mongoose.connect() call and its .then()/.catch() chain
+    - Call connectDB() before starting server
+    - Wrap app.listen() to execute after successful connectDB()
+    - Maintain existing error handling pattern (log error, exit with code 1)
+    - Preserve all middleware configuration (cors, express.json())
+    - Preserve all route registrations
+    - Preserve health check endpoint
+    - Preserve PORT configuration from process.env.PORT
+    - _Bug_Condition: isBugCondition(input) where input.connectionAttempted == true AND NOT input.mongoDBConnected == true_
+    - _Expected_Behavior: MongoDB connection succeeds, server starts on configured PORT, all existing functionality preserved_
+    - _Preservation: All non-connection-related server operations must produce exactly the same behavior (Preservation Requirements 3.1, 3.2, 3.3)_
+    - _Requirements: 2.1, 2.2, 3.1, 3.2, 3.3_
+
+  - [ ] 3.3 Verify bug condition exploration test now passes
+    - **Property 1: Expected Behavior** - MongoDB Connection Succeeds
+    - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
+    - The test from task 1 encodes the expected behavior (successful connection and server startup)
+    - When this test passes, it confirms the expected behavior is satisfied
+    - Run bug condition exploration test from step 1
+    - **EXPECTED OUTCOME**: Test PASSES (confirms bug is fixed - DNS resolution works, connection succeeds)
+    - Verify that server connects to MongoDB Atlas successfully
+    - Verify that "✅ MongoDB connected" is logged
+    - Verify that server starts on configured PORT
+    - _Requirements: 2.1, 2.2_
+
+  - [ ] 3.4 Verify preservation tests still pass
+    - **Property 2: Preservation** - Server Configuration and Behavior Preserved
+    - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
+    - Run preservation property tests from step 2
+    - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
+    - Confirm middleware configuration unchanged (cors, express.json())
+    - Confirm route handling unchanged
+    - Confirm health check endpoint unchanged
+    - Confirm PORT configuration unchanged
+    - Confirm error handling behavior unchanged
+    - _Requirements: 3.1, 3.2, 3.3_
+
+- [ ] 4. Checkpoint - Ensure all tests pass
+  - Run all tests (bug condition + preservation)
+  - Verify MongoDB connection succeeds
+  - Verify server starts successfully
+  - Verify all API routes work correctly
+  - Verify no regressions in existing functionality
+  - If any issues arise, document them and ask the user for guidance

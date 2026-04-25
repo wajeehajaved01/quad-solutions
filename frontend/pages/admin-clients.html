@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Clients — Quad Solutions Admin</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--teal);
+      color: #fff;
+      font-weight: 500; font-size: 0.85rem;
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-right: 0.6rem; flex-shrink: 0;
+    }
+    .client-cell { display: flex; align-items: center; }
+    .search-bar {
+      padding: 0.55rem 1rem;
+      border: 1.5px solid var(--gray-lt);
+      border-radius: var(--radius);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      width: 280px;
+      margin-bottom: 1.25rem;
+      background: var(--white);
+      color: var(--navy);
+    }
+  </style>
+</head>
+<body>
+<div class="dashboard">
+  <aside class="sidebar">
+    <div class="sidebar-brand">Quad<span>Admin</span></div>
+    <nav>
+      <a href="admin-dashboard.html">📊 Dashboard</a>
+      <a href="admin-requests.html">📋 All Requests</a>
+      <a href="admin-clients.html" class="active">👥 Clients</a>
+    </nav>
+    <div class="sidebar-logout">
+      <button class="btn-outline" onclick="logout()" style="width:100%;font-size:0.85rem">Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <h1 class="page-title">Registered Clients</h1>
+
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <input
+        type="text"
+        class="search-bar"
+        id="search"
+        placeholder="Search by name, email, or company..."
+        oninput="applySearch()"
+      />
+      <span id="count-label" style="color:var(--gray);font-size:0.85rem"></span>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Company</th>
+            <th>Phone</th>
+            <th>Joined</th>
+            <th>Requests</th>
+          </tr>
+        </thead>
+        <tbody id="clients-tbody">
+          <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--gray)">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  requireAdmin();
+
+  let allClients   = [];
+  let allRequests  = [];
+
+  async function loadClients() {
+    try {
+      [allClients, allRequests] = await Promise.all([
+        adminAPI.clients(),
+        adminAPI.allRequests()
+      ]);
+      renderTable(allClients);
+    } catch (err) {
+      document.getElementById('clients-tbody').innerHTML =
+        `<tr><td colspan="5" style="color:var(--danger);padding:1rem">${err.message}</td></tr>`;
+    }
+  }
+
+  function getInitials(name = '') {
+    return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  }
+
+  function renderTable(data) {
+    const tbody = document.getElementById('clients-tbody');
+    document.getElementById('count-label').textContent = `${data.length} client${data.length !== 1 ? 's' : ''}`;
+
+    if (data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--gray)">No clients found</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.map(c => {
+      const reqCount = allRequests.filter(r => r.client?._id === c._id || r.client === c._id).length;
+      return `
+        <tr>
+          <td>
+            <div class="client-cell">
+              <div class="avatar">${getInitials(c.name)}</div>
+              <div>
+                <strong>${c.name}</strong>
+                <br/><span style="color:var(--gray);font-size:0.78rem">${c.email}</span>
+              </div>
+            </div>
+          </td>
+          <td>${c.company || '—'}</td>
+          <td>${c.phone || '—'}</td>
+          <td>${formatDate(c.createdAt)}</td>
+          <td>
+            <a href="admin-requests.html" style="color:var(--teal);font-weight:500">${reqCount} request${reqCount !== 1 ? 's' : ''}</a>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function applySearch() {
+    const q = document.getElementById('search').value.toLowerCase();
+    const filtered = allClients.filter(c =>
+      c.name.toLowerCase().includes(q) ||
+      c.email.toLowerCase().includes(q) ||
+      (c.company || '').toLowerCase().includes(q)
+    );
+    renderTable(filtered);
+  }
+
+  loadClients();
+</script>
+</body>
+</html>

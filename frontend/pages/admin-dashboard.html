@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard — Quad Solutions</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<div class="dashboard">
+  <aside class="sidebar">
+    <div class="sidebar-brand">Quad<span>Admin</span></div>
+    <nav>
+      <a href="admin-dashboard.html" class="active">📊 Dashboard</a>
+      <a href="admin-requests.html">📋 All Requests</a>
+      <a href="admin-clients.html">👥 Clients</a>
+    </nav>
+    <div class="sidebar-logout">
+      <button class="btn-outline" onclick="logout()" style="width:100%;font-size:0.85rem">Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <h1 class="page-title">Dashboard Overview</h1>
+
+    <div class="stats-row">
+      <div class="stat-box"><div class="num" id="s-clients">—</div><div class="lbl">Total Clients</div></div>
+      <div class="stat-box"><div class="num" id="s-total">—</div><div class="lbl">Total Requests</div></div>
+      <div class="stat-box"><div class="num" id="s-pending">—</div><div class="lbl">Pending</div></div>
+      <div class="stat-box"><div class="num" id="s-review">—</div><div class="lbl">In Review</div></div>
+      <div class="stat-box"><div class="num" id="s-approved">—</div><div class="lbl">Approved</div></div>
+      <div class="stat-box"><div class="num" id="s-rejected">—</div><div class="lbl">Rejected</div></div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h2 style="font-size:1.1rem">Recent Requests</h2>
+      <a href="admin-requests.html" style="color:var(--teal);font-size:0.9rem">View all →</a>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Client</th><th>Provider</th><th>Specialty</th><th>Status</th><th>Date</th><th>Action</th></tr>
+        </thead>
+        <tbody id="recent-tbody">
+          <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray)">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  requireAdmin();
+
+  async function loadDashboard() {
+    try {
+      const [stats, requests] = await Promise.all([adminAPI.stats(), adminAPI.allRequests()]);
+
+      document.getElementById('s-clients').textContent  = stats.totalClients;
+      document.getElementById('s-total').textContent    = stats.totalRequests;
+      document.getElementById('s-pending').textContent  = stats.pending;
+      document.getElementById('s-review').textContent   = stats.inReview;
+      document.getElementById('s-approved').textContent = stats.approved;
+      document.getElementById('s-rejected').textContent = stats.rejected;
+
+      const recent = requests.slice(0, 8);
+      document.getElementById('recent-tbody').innerHTML = recent.length === 0
+        ? `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray)">No requests yet</td></tr>`
+        : recent.map(r => `
+          <tr>
+            <td>${r.client?.name || '—'}</td>
+            <td>${r.providerName}</td>
+            <td>${r.specialty}</td>
+            <td>${statusBadge(r.status)}</td>
+            <td>${formatDate(r.createdAt)}</td>
+            <td><a href="admin-requests.html?id=${r._id}" style="color:var(--teal);font-size:0.85rem">Update →</a></td>
+          </tr>`).join('');
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>

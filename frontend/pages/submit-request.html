@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>New Request — Quad Solutions</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<div class="dashboard">
+  <aside class="sidebar">
+    <div class="sidebar-brand">Quad<span>Solutions</span></div>
+    <nav>
+      <a href="client-dashboard.html">📋 My Applications</a>
+      <a href="submit-request.html" class="active">➕ New Request</a>
+      <a href="contact.html">📞 Contact Support</a>
+    </nav>
+    <div class="sidebar-logout">
+      <button class="btn-outline" onclick="logout()" style="width:100%;font-size:0.85rem">Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <h1 class="page-title">Submit New Request</h1>
+
+    <div style="background:var(--white);border-radius:var(--radius);padding:2rem;max-width:680px;box-shadow:var(--shadow)">
+      <div id="alert" class="alert"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Provider Full Name *</label>
+          <input type="text" id="providerName" placeholder="Dr. John Smith"/>
+        </div>
+        <div class="form-group">
+          <label>NPI Number *</label>
+          <input type="text" id="providerNPI" placeholder="1234567890"/>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Specialty *</label>
+          <select id="specialty">
+            <option value="">Select specialty</option>
+            <option>Family Medicine</option>
+            <option>Internal Medicine</option>
+            <option>Cardiology</option>
+            <option>Pediatrics</option>
+            <option>Orthopedics</option>
+            <option>Psychiatry</option>
+            <option>Dermatology</option>
+            <option>Radiology</option>
+            <option>Emergency Medicine</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Insurance Plan *</label>
+          <input type="text" id="insurancePlan" placeholder="e.g. Blue Cross Blue Shield"/>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>License Number *</label>
+          <input type="text" id="licenseNumber" placeholder="MD123456"/>
+        </div>
+        <div class="form-group">
+          <label>License State *</label>
+          <input type="text" id="licenseState" placeholder="e.g. CA, TX, NY"/>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Additional Notes</label>
+        <textarea id="notes" placeholder="Any additional information or special requirements..."></textarea>
+      </div>
+
+      <button class="btn-primary form-submit" onclick="handleSubmit()">Submit Application</button>
+    </div>
+  </main>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  requireLogin();
+
+  async function handleSubmit() {
+    hideAlert('alert');
+    const body = {
+      providerName:  document.getElementById('providerName').value.trim(),
+      providerNPI:   document.getElementById('providerNPI').value.trim(),
+      specialty:     document.getElementById('specialty').value,
+      insurancePlan: document.getElementById('insurancePlan').value.trim(),
+      licenseNumber: document.getElementById('licenseNumber').value.trim(),
+      licenseState:  document.getElementById('licenseState').value.trim(),
+      notes:         document.getElementById('notes').value.trim(),
+    };
+
+    if (!body.providerName || !body.providerNPI || !body.specialty || !body.insurancePlan || !body.licenseNumber || !body.licenseState)
+      return showAlert('alert', 'Please fill in all required fields (*)', 'error');
+
+    try {
+      await requestsAPI.submit(body);
+      showAlert('alert', '✅ Application submitted successfully!', 'success');
+      setTimeout(() => window.location.href = 'client-dashboard.html', 1500);
+    } catch (err) {
+      showAlert('alert', err.message, 'error');
+    }
+  }
+</script>
+</body>
+</html>
