@@ -1,11 +1,11 @@
 // ── Config ──────────────────────────────────────────────────
-const API = 'http://localhost:5000/api';  // Change to deployed URL later
+const API = 'https://quad-solutions-production.up.railway.app/';  // Change to deployed URL later
 
 // ── Token helpers ────────────────────────────────────────────
-const getToken  = () => localStorage.getItem('token');
-const getUser   = () => JSON.parse(localStorage.getItem('user') || 'null');
-const isAdmin   = () => getUser()?.role === 'admin';
-const isLoggedIn= () => !!getToken();
+const getToken = () => localStorage.getItem('token');
+const getUser = () => JSON.parse(localStorage.getItem('user') || 'null');
+const isAdmin = () => getUser()?.role === 'admin';
+const isLoggedIn = () => !!getToken();
 
 function saveAuth(data) {
   localStorage.setItem('token', data.token);
@@ -33,25 +33,25 @@ async function apiFetch(endpoint, options = {}) {
 // ── Auth ─────────────────────────────────────────────────────
 const authAPI = {
   register: (body) => apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(body) }),
-  login:    (body) => apiFetch('/auth/login',    { method: 'POST', body: JSON.stringify(body) }),
-  me:       ()     => apiFetch('/auth/me'),
+  login: (body) => apiFetch('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
+  me: () => apiFetch('/auth/me'),
 };
 
 // ── Client requests ──────────────────────────────────────────
 const requestsAPI = {
-  submit:  (body) => apiFetch('/requests',     { method: 'POST', body: JSON.stringify(body) }),
-  getAll:  ()     => apiFetch('/requests'),
-  getOne:  (id)   => apiFetch(`/requests/${id}`),
+  submit: (body) => apiFetch('/requests', { method: 'POST', body: JSON.stringify(body) }),
+  getAll: () => apiFetch('/requests'),
+  getOne: (id) => apiFetch(`/requests/${id}`),
 };
 
 // ── Admin ────────────────────────────────────────────────────
 const adminAPI = {
-  stats:         ()          => apiFetch('/admin/stats'),
-  clients:       ()          => apiFetch('/admin/clients'),
-  allRequests:   ()          => apiFetch('/admin/requests'),
-  getRequest:    (id)        => apiFetch(`/admin/requests/${id}`),
-  updateStatus:  (id, body)  => apiFetch(`/admin/requests/${id}/status`, { method: 'PATCH', body: JSON.stringify(body) }),
-  deleteRequest: (id)        => apiFetch(`/admin/requests/${id}`, { method: 'DELETE' }),
+  stats: () => apiFetch('/admin/stats'),
+  clients: () => apiFetch('/admin/clients'),
+  allRequests: () => apiFetch('/admin/requests'),
+  getRequest: (id) => apiFetch(`/admin/requests/${id}`),
+  updateStatus: (id, body) => apiFetch(`/admin/requests/${id}/status`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deleteRequest: (id) => apiFetch(`/admin/requests/${id}`, { method: 'DELETE' }),
 };
 
 // ── UI helpers ───────────────────────────────────────────────
@@ -68,11 +68,11 @@ function hideAlert(id) {
 }
 
 function statusBadge(status) {
-  return `<span class="badge-status badge-${status}">${status.replace('_',' ')}</span>`;
+  return `<span class="badge-status badge-${status}">${status.replace('_', ' ')}</span>`;
 }
 
 function formatDate(iso) {
-  return new Date(iso).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
+  return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 // ── Route guards ─────────────────────────────────────────────
